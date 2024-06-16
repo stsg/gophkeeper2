@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package gophkeeper;
+
+option go_package = "github.com/stsg/gophkeeper2/pb";
+
+import "google/protobuf/empty.proto";
+
+enum TYPE {
+  NAN = 0;
+  LOGIN_PASSWORD = 1;
+  BANK_CARD = 2;
+  FILE = 3;
+}
+
+message Empty {
+}
+
+message Resource {
+  sint32 id = 1;
+  TYPE type = 2;
+  bytes meta = 3;
+  bytes data = 4;
+}
+
+message ResourceDescription {
+  sint32 id = 1;
+  TYPE type = 2;
+  bytes meta = 3;
+}
+
+message ResourceId {
+  sint32 id = 1;
+}
+
+message Query {
+  TYPE resourceType = 1;
+}
+
+message FileChunk {
+  bytes meta = 1;
+  bytes data = 2;
+}
+
+service Resources {
+  rpc Save(Resource) returns (ResourceId);
+  rpc Delete(ResourceId) returns (google.protobuf.Empty);
+  rpc Update(Resource) returns (google.protobuf.Empty);
+  rpc GetDescriptions(Query) returns (stream ResourceDescription);
+  rpc Get(ResourceId) returns (Resource);
+  rpc SaveFile(stream FileChunk) returns (ResourceId);
+  rpc GetFile(ResourceId) returns (stream FileChunk);
+}

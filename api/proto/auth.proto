@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package gophkeeper;
+
+option go_package = "github.com/stsg/gophkeeper2/pb";
+
+import "google/protobuf/timestamp.proto";
+
+message AuthData {
+  string username = 1;
+  string password = 2;
+}
+
+message TokenData {
+  string token = 1;
+  google.protobuf.Timestamp expireAt = 2;
+}
+
+service Auth {
+  rpc Register(AuthData) returns (TokenData);
+  rpc Login(AuthData) returns (TokenData);
+}

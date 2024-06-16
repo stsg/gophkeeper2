@@ -1,0 +1,16 @@
+services:
+  gophkeeper:
+    build: .
+    image: starky/gophkeeper:master
+    container_name: gophkeeper
+    hostname: gophkeeper
+    ports:
+      - "8080:8080"
+    volumes:
+      - /tmp:/hosthome:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - TZ=Europe/Moscow
+      - LISTEN=0.0.0.0:42000
+      - DEBUG=true
+      - VOLUMES=home:/hosthome

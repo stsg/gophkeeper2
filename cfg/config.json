@@ -1,0 +1,7 @@
+{
+  "server_port": ":4200",
+  "token_key": "cartople",
+  "crypto_key_path": "",
+  "db_connection": "host=localhost port=5432 user=postgres password=postgres dbname=gophkeeper sslmode=disable",
+  "db_max_connections": 10
+}
