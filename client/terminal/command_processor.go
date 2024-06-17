@@ -140,7 +140,6 @@ func (cp *commandParser) handleHelp(_ []string) (string, error) {
 }
 
 func (cp *commandParser) handleExit(_ []string) (string, error) {
-	os.Exit(0)
 	return "", nil
 }
 

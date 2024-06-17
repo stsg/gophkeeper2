@@ -8,12 +8,15 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"github.com/stsg/gophkeeper2/pkg/pb"
 	"github.com/stsg/gophkeeper2/server/mocks/services"
 	"github.com/stsg/gophkeeper2/server/model"
+	"github.com/stsg/gophkeeper2/server/model/errs"
 )
 
 func TestAuthServer_Register_UsernameError(t *testing.T) {
@@ -166,4 +169,69 @@ func TestAuthServer_Login_Success(t *testing.T) {
 	assert.NotNil(t, tokenData.ExpireAt)
 
 	assert.Equal(t, token, tokenData.Token)
+}
+
+// Successful registration with valid username and password
+func TestRegister_SuccessfulRegistration(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockUserService := services.NewMockUserService(ctrl)
+	mockTokenService := services.NewMockTokenService(ctrl)
+	logger := zap.NewNop().Sugar()
+
+	authServer := &authServer{
+		log:          logger,
+		userService:  mockUserService,
+		tokenService: mockTokenService,
+	}
+
+	ctx := context.Background()
+	authData := &pb.AuthData{
+		Username: "testuser",
+		Password: "testpassword",
+	}
+
+	user := &model.User{Username: authData.Username, Password: []byte(authData.Password)}
+	mockUserService.EXPECT().CreateUser(ctx, user).Return(int32(1), nil)
+	mockTokenService.EXPECT().Generate(int32(1), gomock.Any()).Return("testtoken", nil)
+
+	tokenData, err := authServer.Register(ctx, authData)
+
+	require.NoError(t, err)
+	require.NotNil(t, tokenData)
+	require.Equal(t, "testtoken", tokenData.Token)
+}
+
+// Registration with an already existing username
+func TestRegister_UserAlreadyExists(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockUserService := services.NewMockUserService(ctrl)
+	mockTokenService := services.NewMockTokenService(ctrl)
+	logger := zap.NewNop().Sugar()
+
+	authServer := &authServer{
+		log:          logger,
+		userService:  mockUserService,
+		tokenService: mockTokenService,
+	}
+
+	ctx := context.Background()
+	authData := &pb.AuthData{
+		Username: "existinguser",
+		Password: "testpassword",
+	}
+
+	user := &model.User{Username: authData.Username, Password: []byte(authData.Password)}
+	mockUserService.EXPECT().CreateUser(ctx, user).Return(int32(0), errs.ErrUserAlreadyExist)
+
+	tokenData, err := authServer.Register(ctx, authData)
+
+	require.Error(t, err)
+	require.Nil(t, tokenData)
+	st, ok := status.FromError(err)
+	require.True(t, ok)
+	require.Equal(t, codes.AlreadyExists, st.Code())
 }

@@ -29,6 +29,7 @@ func TestCommandParser_Start(t *testing.T) {
 	parser.InitScanner()
 	parser.commands = map[string]func(args []string) (string, error){
 		"login": parser.handleLogin,
+		"exit":  parser.handleExit,
 	}
 	assert.NoError(t, writer.Text("login"))
 	result, err := processCommands(parser)
@@ -36,7 +37,7 @@ func TestCommandParser_Start(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.NoError(t, writer.Text("login"))
-	assert.Equal(t, "OK", result)
+	assert.Equal(t, "", result)
 
 	assert.Equal(t, "not testable", "not testable")
 }

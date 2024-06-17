@@ -1,3 +1,5 @@
+// package model
+
 package model
 
 import (
