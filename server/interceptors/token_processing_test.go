@@ -27,9 +27,29 @@ func TestNewRequestTokenProcessor_NilTokenService(t *testing.T) {
 		}
 	}()
 
-	nonSecureMethods := []string{"GET", "POST"}
+	nonSecureMethods := []string{}
 
 	processor := NewRequestTokenProcessor(nil, nonSecureMethods...)
-
 	assert.NotNil(t, processor)
+}
+
+func TestIsSecureMethodInMap(t *testing.T) {
+	mockTokenService := new(services.MockTokenService)
+	nonSecureMethods := []string{
+		"/test.Method",
+		"GET",
+		"POST",
+	}
+	processor := NewRequestTokenProcessor(mockTokenService, nonSecureMethods...)
+
+	result := processor.(*requestTokenProcessor).isSecureMethod("/test.Method")
+	assert.True(t, result)
+	result = processor.(*requestTokenProcessor).isSecureMethod("GET")
+	assert.True(t, result)
+	result = processor.(*requestTokenProcessor).isSecureMethod("POST")
+	assert.True(t, result)
+	result = processor.(*requestTokenProcessor).isSecureMethod("POSt")
+	assert.False(t, result)
+	result = processor.(*requestTokenProcessor).isSecureMethod("test.method")
+	assert.False(t, result)
 }

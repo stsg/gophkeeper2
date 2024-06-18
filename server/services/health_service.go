@@ -5,13 +5,10 @@ import (
 	"log"
 	"net/http"
 
-	"go.uber.org/zap"
-
 	"github.com/stsg/gophkeeper2/server/repositories"
 )
 
 type HealthChecker struct {
-	log *zap.SugaredLogger
 	ctx context.Context
 	db  repositories.DBProvider
 }

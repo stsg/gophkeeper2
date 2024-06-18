@@ -61,7 +61,8 @@ func TestValidatePassword_InvalidPassword(t *testing.T) {
 	}
 
 	// Create a userService instance
-	ctx, _ := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	appConfig, _ := configs.InitAppConfig("cfg/config.json")
 	dbProvider, _ := repositories.NewPgProvider(ctx, appConfig)
 	repo := repositories.NewUserRepository(dbProvider) // Assuming a constructor for UserRepository

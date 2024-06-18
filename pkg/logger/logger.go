@@ -8,6 +8,10 @@ import (
 
 var baseLog *zap.Logger
 
+// init initializes the logger with the production configuration.
+//
+// It sets the logger's level to debug and disables stacktraces. If there is an error
+// building the logger, it logs the error and exits the program.
 func init() {
 	cfg := zap.NewProductionConfig()
 	cfg.DisableStacktrace = true
@@ -19,6 +23,13 @@ func init() {
 	baseLog = logger
 }
 
+// NewLogger creates a new SugaredLogger with the given name.
+//
+// Parameters:
+// - name: the name of the logger.
+//
+// Returns:
+// - *zap.SugaredLogger: a new SugaredLogger with the given name.
 func NewLogger(name string) *zap.SugaredLogger {
 	return baseLog.Sugar().Named(name)
 }

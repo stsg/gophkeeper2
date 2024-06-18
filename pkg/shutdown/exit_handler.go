@@ -23,6 +23,7 @@ var (
 
 //go:generate mockgen -source=exit_handler.go -destination=../mocks/shutdown/exit_handler.go -package=shutdown
 
+// ExitHandler interface
 type ExitHandler interface {
 	IsNewFuncExecutionAllowed() bool
 	ShutdownHTTPServerBeforeExit(httpServer *http.Server)
@@ -50,6 +51,13 @@ type exitHandler struct {
 	newFuncAllowed    bool
 }
 
+// NewExitHandlerWithCtx creates a new instance of the ExitHandler interface with the given main context canceler.
+//
+// Parameters:
+// - mainCtxCanceler: A function that cancels the main context.
+//
+// Returns:
+// - ExitHandler: An instance of the ExitHandler interface.
 func NewExitHandlerWithCtx(mainCtxCanceler context.CancelFunc) ExitHandler {
 	return &exitHandler{
 		log:               logger.NewLogger("exit-hdr"),
@@ -59,42 +67,94 @@ func NewExitHandlerWithCtx(mainCtxCanceler context.CancelFunc) ExitHandler {
 	}
 }
 
+// ToCancel sets the toCancel field of the exitHandler struct with the provided slice of context.CancelFunc.
+//
+// Parameters:
+// - toCancel: A slice of context.CancelFunc to assign to the toCancel field.
 func (eh *exitHandler) ToCancel(toCancel []context.CancelFunc) {
 	eh.toCancel = toCancel
 }
 
+// ToStop sets the list of channels to stop active goroutines.
+//
+// Parameters:
+// - toStop: A slice of channels to stop active goroutines.
+//
+// Returns:
+// - None.
 func (eh *exitHandler) ToStop(toStop []chan struct{}) {
 	eh.toStop = toStop
 }
 
+// ToClose assigns a slice of io.Closer to the exitHandler's toClose field.
+//
+// Parameters:
+// - toClose: A slice of io.Closer to be assigned.
 func (eh *exitHandler) ToClose(toClose []io.Closer) {
 	eh.toClose = toClose
 }
 
+// ToExecute assigns a slice of functions to the exitHandler's toExecute field.
+//
+// Parameters:
+// - toExecute: A slice of functions with context that return an error to be assigned.
 func (eh *exitHandler) ToExecute(toExecute []func(ctx context.Context) error) {
 	eh.toExecute = toExecute
 }
 
+// IsNewFuncExecutionAllowed returns whether new function execution is allowed.
+//
+// It acquires a lock, checks the value of the newFuncAllowed field, and releases the lock.
+//
+// Returns:
+// - bool: Whether new function execution is allowed.
 func (eh *exitHandler) IsNewFuncExecutionAllowed() bool {
 	mu.Lock()
 	defer mu.Unlock()
 	return eh.newFuncAllowed
 }
 
+// setNewFuncExecutionAllowed sets the value of the newFuncAllowed field in the exitHandler struct.
+//
+// Parameters:
+// - value: A boolean value indicating whether new function execution is allowed.
+//
+// Returns:
+// None.
 func (eh *exitHandler) setNewFuncExecutionAllowed(value bool) {
 	mu.Lock()
 	defer mu.Unlock()
 	eh.newFuncAllowed = value
 }
 
+// ShutdownHTTPServerBeforeExit sets the provided http.Server to the exitHandler's httpServer field.
+//
+// Parameters:
+// - httpServer: A pointer to an http.Server object to be set as the exitHandler's httpServer field.
 func (eh *exitHandler) ShutdownHTTPServerBeforeExit(httpServer *http.Server) {
 	eh.httpServer = httpServer
 }
 
+// ShutdownGrpcServerBeforeExit sets the provided grpc.Server to the exitHandler's grpcServer field.
+//
+// Parameters:
+// - grpcServer: A pointer to a grpc.Server object.
+//
+// Returns:
+// None.
 func (eh *exitHandler) ShutdownGrpcServerBeforeExit(grpcServer *grpc.Server) {
 	eh.grpcServer = grpcServer
 }
 
+// AddFuncInProcessing adds a function to the exit handler's internal processing.
+//
+// It acquires a lock, logs the start of the function, and increments the
+// number of functions in processing.
+//
+// Parameters:
+// - alias: A string representing the alias of the function being added.
+//
+// Returns: None.
 func (eh *exitHandler) AddFuncInProcessing(alias string) {
 	mu.Lock()
 	defer mu.Unlock()
@@ -102,6 +162,13 @@ func (eh *exitHandler) AddFuncInProcessing(alias string) {
 	eh.funcsInProcessing.Add(1)
 }
 
+// FuncFinished removes the provided function alias from the exit handler's internal processing.
+//
+// Parameters:
+// - alias: A string representing the alias of the function being finished.
+//
+// Returns:
+// None.
 func (eh *exitHandler) FuncFinished(alias string) {
 	mu.Lock()
 	defer mu.Unlock()
@@ -109,6 +176,19 @@ func (eh *exitHandler) FuncFinished(alias string) {
 	eh.funcsInProcessing.Add(-1)
 }
 
+// ProperExitDefer activates the graceful exit handler and returns a channel that
+// will be closed when a proper exit signal is received. The exit handler
+// listens for SIGINT, SIGTERM, and SIGQUIT signals and performs the following
+// actions:
+// - Logs the activation of the graceful exit handler.
+// - Waits for a signal to be received on the signals channel.
+// - Logs the received signal.
+// - Closes the exit channel.
+// - Sets the new function execution flag to false.
+// - Calls the Shutdown method of the exit handler.
+//
+// Returns:
+// - A channel of type struct{} that will be closed when a proper exit signal is received.
 func (eh *exitHandler) ProperExitDefer() chan struct{} {
 	eh.log.Info("Graceful exit handler is activated")
 	signals := make(chan os.Signal, 1)
@@ -128,6 +208,13 @@ func (eh *exitHandler) ProperExitDefer() chan struct{} {
 	return exit
 }
 
+// Shutdown gracefully shuts down the system by waiting for the shutdown server,
+// finishing all functions, and ending held objects. It returns when the system
+// has finished work and gracefully shut down, or after 1 minute if the system
+// has not shut down in time.
+//
+// No parameters.
+// No return values.
 func (eh *exitHandler) Shutdown() {
 	successfullyFinished := make(chan struct{})
 	go func() {
@@ -146,12 +233,23 @@ func (eh *exitHandler) Shutdown() {
 	}
 }
 
+// waitForFinishFunc waits for all functions to finish work before logging that
+// they have finished successfully.
+//
+// No parameters.
+// No return values.
 func (eh *exitHandler) waitForFinishFunc() {
 	log.Println("Waiting for functions finish work...")
 	eh.funcsInProcessing.Wait()
 	log.Println("All functions finished work successfully")
 }
 
+// waitForShutdownServer waits for the shutdown HTTP server and the shutdown
+// gRPC server to complete their tasks and gracefully stop. It logs the progress
+// of the shutdown process and logs an error if any occurs.
+//
+// No parameters.
+// No return values.
 func (eh *exitHandler) waitForShutdownServer() {
 	if eh.httpServer != nil {
 		log.Println("Waiting for shutdown http server...")
@@ -168,6 +266,11 @@ func (eh *exitHandler) waitForShutdownServer() {
 	}
 }
 
+// endHeldObjects performs cleanup by executing final functions, canceling active contexts,
+// stopping active goroutines, closing active resources, and logging the successful completion of final work.
+//
+// No parameters.
+// No return values.
 func (eh *exitHandler) endHeldObjects() {
 	if len(eh.toExecute) > 0 {
 		log.Println("ToExecute final funcs")

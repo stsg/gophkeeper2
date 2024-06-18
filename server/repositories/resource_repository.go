@@ -100,8 +100,7 @@ func (r *resourceRepository) Get(ctx context.Context, resId int32, userId int32)
 		return nil, errs.DbError{Err: err}
 	}
 	defer conn.Release()
-	var row pgx.Row
-	row = conn.QueryRow(ctx, "select id, user_id, type, meta, data from resources where id = $1 and user_id = $2", resId, userId)
+	row := conn.QueryRow(ctx, "select id, user_id, type, meta, data from resources where id = $1 and user_id = $2", resId, userId)
 	err = row.Scan(&result.Id, &result.UserId, &result.Type, &result.Meta, &result.Data)
 	if errors.Is(err, pgx.ErrNoRows) {
 		r.log.Warnf("There is no '%d' resource of '%d' user", resId, userId)
