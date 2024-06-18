@@ -61,3 +61,23 @@ func processCommands(cp *commandParser) (string, error) {
 	}
 	return result, nil
 }
+
+func TestHandleEmptyInput(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	writer := &TextWriter{writer: bufio.NewWriter(os.Stdout)}
+
+	authService := services.NewMockAuthService(ctrl)
+	resService := services.NewMockResourceService(ctrl)
+	exitHandler := shutdown.NewMockExitHandler(ctrl)
+	parser := &commandParser{authService: authService, resourceService: resService, exitHandler: exitHandler}
+	parser.InitScanner()
+	parser.commands = map[string]func(args []string) (string, error){
+		"exit": parser.handleExit,
+	}
+	assert.NoError(t, writer.Text(""))
+	result, err := processCommands(parser)
+	assert.NoError(t, err)
+	assert.Equal(t, "", result)
+}

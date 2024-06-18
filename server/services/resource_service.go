@@ -13,6 +13,9 @@ import (
 
 //go:generate mockgen -source=resource_service.go -destination=../mocks/services/resource_service.go -package=services
 
+// Defines an interface named ResourceService.
+// This interface has several methods that represent operations that can be
+// performed on a resource.
 type ResourceService interface {
 	Save(ctx context.Context, res *model.Resource) error
 	Update(ctx context.Context, res *model.Resource) error
@@ -23,6 +26,10 @@ type ResourceService interface {
 	GetFileDescription(ctx context.Context, resource *model.Resource) ([]byte, error)
 }
 
+// The resourceService struct is a type that represents a service for managing
+// resources. It has two fields: log, which is a logger for logging messages,
+// and repo, which is an instance of the ResourceRepository interface for
+// interacting with the resource repository.
 type resourceService struct {
 	log  *zap.SugaredLogger
 	repo repositories.ResourceRepository

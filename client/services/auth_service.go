@@ -15,11 +15,13 @@ import (
 
 //go:generate mockgen -source=auth_service.go -destination=../mocks/services/auth_service.go -package=services
 
+// This Go code defines an interface named AuthService that has two methods: Register and Login.
 type AuthService interface {
 	Register(ctx context.Context, username string, password string) (*pb.TokenData, error)
 	Login(ctx context.Context, username string, password string) (*pb.TokenData, error)
 }
 
+// The authService struct is a Go struct that represents an authentication service.
 type authService struct {
 	log        *zap.SugaredLogger
 	authClient pb.AuthClient
@@ -27,6 +29,14 @@ type authService struct {
 	tokenHolder *model.TokenHolder
 }
 
+// NewAuthService creates a new instance of AuthService with the given pb.AuthClient and model.TokenHolder.
+//
+// Parameters:
+// - client: The pb.AuthClient to be used for authentication requests.
+// - tokenHolder: The model.TokenHolder to store the token data.
+//
+// Returns:
+// - AuthService: A new instance of AuthService.
 func NewAuthService(
 	client pb.AuthClient,
 	tokenHolder *model.TokenHolder,
@@ -38,6 +48,16 @@ func NewAuthService(
 	}
 }
 
+// Register registers a new user with the given username and password.
+//
+// Parameters:
+// - ctx: The context.Context object for the request.
+// - username: The username of the new user.
+// - password: The password of the new user.
+//
+// Returns:
+// - *pb.TokenData: The token data for the newly registered user.
+// - error: An error if the registration failed.
 func (s *authService) Register(ctx context.Context, username string, password string) (*pb.TokenData, error) {
 	tokenData, err := s.authClient.Register(ctx, &pb.AuthData{
 		Username: username,
@@ -56,6 +76,16 @@ func (s *authService) Register(ctx context.Context, username string, password st
 	return tokenData, nil
 }
 
+// Login logs in a user with the given username and password.
+//
+// Parameters:
+// - ctx: The context.Context object for the request.
+// - username: The username of the user.
+// - password: The password of the user.
+//
+// Returns:
+// - *pb.TokenData: The token data for the logged-in user.
+// - error: An error if the login failed.
 func (s *authService) Login(ctx context.Context, username string, password string) (*pb.TokenData, error) {
 	tokenData, err := s.authClient.Login(
 		ctx,

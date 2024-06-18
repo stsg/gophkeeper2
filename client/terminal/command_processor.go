@@ -45,6 +45,7 @@ const (
 type CommandParser interface {
 	Start(exit chan struct{})
 	InitScanner()
+	SetScanner(scanner *bufio.Scanner)
 }
 
 type commandParser struct {
@@ -365,5 +366,9 @@ func (cp *commandParser) InitScanner() {
 	buf := make([]byte, maxCapacity)
 	scanner := bufio.NewScanner(os.Stdin)
 	scanner.Buffer(buf, maxCapacity)
+	cp.scanner = scanner
+}
+
+func (cp *commandParser) SetScanner(scanner *bufio.Scanner) {
 	cp.scanner = scanner
 }

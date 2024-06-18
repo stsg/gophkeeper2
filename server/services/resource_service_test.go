@@ -72,3 +72,26 @@ func TestSaveFileDescription_RepoError(t *testing.T) {
 	assert.Equal(t, expectedErr, err)
 	assert.Equal(t, int32(0), id)
 }
+
+func Test_Save(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := repositories.NewMockResourceRepository(ctrl)
+	service := NewResourceService(mockRepo)
+
+	ctx := context.Background()
+	resource := &model.Resource{
+		UserId: 1,
+		Data:   []byte("test data"),
+		ResourceDescription: model.ResourceDescription{
+			Type: enum.BankCard,
+			Meta: []byte("test meta"),
+		},
+	}
+
+	mockRepo.EXPECT().Save(ctx, resource).Return(nil)
+
+	err := service.Save(ctx, resource)
+	assert.NoError(t, err)
+}

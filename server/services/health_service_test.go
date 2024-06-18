@@ -14,7 +14,8 @@ func TestCheckDBHandler(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	ctx, _ := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	appConfig, _ := configs.InitAppConfig("cfg/config.json")
 	dbProvider, _ := repositories.NewPgProvider(ctx, appConfig)
 	hc := &HealthChecker{ctx: ctx, db: dbProvider}
