@@ -9,7 +9,7 @@ import (
 	"github.com/jackc/tern/migrate"
 	"go.uber.org/zap"
 
-    "github.com/stsg/gophkeeper2/pkg/logger"
+	"github.com/stsg/gophkeeper2/pkg/logger"
 	"github.com/stsg/gophkeeper2/server/configs"
 	"github.com/stsg/gophkeeper2/server/model/errs"
 )
@@ -30,6 +30,21 @@ type pgProvider struct {
 	conn *pgxpool.Pool
 }
 
+// NewPgProvider creates a new instance of the DBProvider interface using the provided
+// context and appConfig. It initializes a logger and checks if the appConfig is nil. If it is,
+// it logs an error and returns an error indicating that the appConfig is nil. It then creates a
+// new pgProvider struct and calls the connect and migrationUp methods to establish a connection
+// to the PostgreSQL database and apply any pending migrations. If either of these methods
+// returns an error, it returns an error indicating a database error. Otherwise, it returns the
+// newly created pgProvider instance.
+//
+// Parameters:
+// - ctx: The context.Context object used for cancellation and timeouts.
+// - appConfig: The *configs.AppConfig object containing the database connection configuration.
+//
+// Returns:
+// - DBProvider: The newly created DBProvider instance.
+// - error: An error indicating any issues encountered during the initialization process.
 func NewPgProvider(ctx context.Context, appConfig *configs.AppConfig) (DBProvider, error) {
 	log := logger.NewLogger("pg-provider")
 	if appConfig == nil {
@@ -48,6 +63,15 @@ func NewPgProvider(ctx context.Context, appConfig *configs.AppConfig) (DBProvide
 	return pg, nil
 }
 
+// connect establishes a connection to a PostgreSQL database using the provided connection string and maximum number of connections.
+//
+// Parameters:
+// - ctx: The context.Context object used for cancellation and timeouts.
+// - connString: The connection string for the PostgreSQL database.
+// - maxConns: The maximum number of connections to the database.
+//
+// Returns:
+// - error: An error indicating any issues encountered during the connection process.
 func (p *pgProvider) connect(ctx context.Context, connString string, maxConns int) error {
 	if connString == "" {
 		p.log.Error("Postgres DB config is empty")
@@ -67,6 +91,16 @@ func (p *pgProvider) connect(ctx context.Context, connString string, maxConns in
 	return nil
 }
 
+// migrationUp performs the database migration up operation.
+//
+// It acquires a connection from the PostgreSQL database connection pool, creates a migrator, loads migrations,
+// and performs the migration. It also retrieves the current schema version after the migration is complete.
+//
+// Parameters:
+// - ctx: The context.Context object for the migration operation.
+//
+// Returns:
+// - error: An error indicating any issues encountered during the migration process.
 func (p *pgProvider) migrationUp(ctx context.Context) error {
 	if p.conn == nil {
 		return errs.InternalError{Err: errors.New("failed to start db migration: db connection is empty")}
@@ -100,6 +134,11 @@ func (p *pgProvider) migrationUp(ctx context.Context) error {
 	return nil
 }
 
+// GetConnection retrieves a connection from the database connection pool.
+//
+// Parameters:
+// - ctx: The context.Context object used for cancellation and timeouts.
+// Return type(s): (*pgxpool.Conn, error)
 func (p *pgProvider) GetConnection(ctx context.Context) (*pgxpool.Conn, error) {
 	acquireConn, err := p.conn.Acquire(ctx)
 	if err != nil {
@@ -108,6 +147,16 @@ func (p *pgProvider) GetConnection(ctx context.Context) (*pgxpool.Conn, error) {
 	return acquireConn, err
 }
 
+// HealthCheck checks the health of the Postgres DB connection.
+//
+// It acquires a connection from the connection pool, pings the connection to check its availability,
+// logs the result, and releases the connection.
+//
+// Parameters:
+// - ctx: The context.Context object used for cancellation and timeouts.
+//
+// Return type(s):
+// - error: Returns an error if there was a problem acquiring a connection, pinging the connection, or releasing the connection.
 func (p *pgProvider) HealthCheck(ctx context.Context) error {
 	conn, err := p.GetConnection(ctx)
 	if err != nil {

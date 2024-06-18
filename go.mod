@@ -19,6 +19,12 @@ require (
 )
 
 require (
+	github.com/jackc/pgx/v5 v5.3.1 // indirect
+	github.com/jackc/puddle/v2 v2.2.0 // indirect
+	golang.org/x/sync v0.6.0 // indirect
+)
+
+require (
 	github.com/Masterminds/goutils v1.1.0 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
@@ -35,6 +41,7 @@ require (
 	github.com/jackc/puddle v1.3.0 // indirect
 	github.com/mitchellh/copystructure v1.0.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.0 // indirect
+	github.com/paradoxedge/pgxpoolmock v0.0.0-20230408181131-75c005513df0
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/net v0.22.0 // indirect
