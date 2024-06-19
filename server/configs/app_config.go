@@ -26,6 +26,9 @@ type AppConfig struct {
 	DBMaxConnections int    `env:"DB_MAX_CONNECTIONS" json:"db_max_connections"`
 }
 
+// InitAppConfig initializes the application configuration by reading the configuration file and setting up the configuration
+// by flags. It takes a string parameter `configPath` representing the path to the configuration file. It returns a pointer
+// to an `AppConfig` struct and an error if any.
 func InitAppConfig(configPath string) (*AppConfig, error) {
 	config, err := readConfig(configPath)
 	if err != nil {
@@ -35,6 +38,16 @@ func InitAppConfig(configPath string) (*AppConfig, error) {
 	return config, nil
 }
 
+// readConfig reads the configuration file specified by configFilePath and returns an AppConfig struct
+// containing the configuration data. If configFilePath is empty, an error is returned. If there is an
+// error reading the file or unmarshalling the JSON data, an error is returned.
+//
+// Parameters:
+// - configFilePath: the path to the configuration file (string)
+//
+// Returns:
+// - *AppConfig: a pointer to the AppConfig struct containing the configuration data (AppConfig pointer)
+// - error: an error if there was a problem reading the file or unmarshalling the JSON data (error)
 func readConfig(configFilePath string) (*AppConfig, error) {
 	if configFilePath == "" {
 		return nil, errors.New("failed to init configuration: file path is not specified")
@@ -52,6 +65,22 @@ func readConfig(configFilePath string) (*AppConfig, error) {
 	return &config, nil
 }
 
+// setupConfigByFlags reads configuration flags and updates the AppConfig struct accordingly.
+//
+// It reads the following flags:
+// - serverPortF: Port of the proto server (string)
+// - dbDsnF: Postgres DB DSN (string)
+// - cryptoKeyF: Path to private key (string)
+// - dbMaxConnF: DB Max connections (string)
+// - tokenKeyF: Token key (string)
+//
+// If any of the flags are provided, their values are used to update the corresponding fields in the AppConfig struct.
+//
+// Parameters:
+// - cfg: A pointer to the AppConfig struct to be updated (AppConfig pointer)
+//
+// Returns:
+// - None
 func (cfg *AppConfig) setupConfigByFlags() {
 	cfg.log.Infof("Reading config flags")
 	var serverPortF string
